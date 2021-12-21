@@ -1,0 +1,458 @@
+---
+title: 'PRÀCTICA 2 Visualització de dades'
+author: "Autor: Joan Ginard"
+date: "Desembre 2021- Gener 2022"
+output:
+  html_document:
+    highlight: default
+    number_sections: yes
+    theme: cosmo
+    toc: yes
+    toc_depth: 2
+  pdf_document:
+    highlight: zenburn
+    toc: yes
+  word_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(eval=T, echo=T)
+library(tidyverse)
+```
+
+
+
+
+# Càrrega del joc de dades
+
+Les dades es troben aquí:
+https://archive.ics.uci.edu/ml/datasets/student+performance (descripció)
+https://archive.ics.uci.edu/ml/machine-learning-databases/00320/ (localització de les dades)
+
+I provenen d'aquest article:
+
+P. Cortez and A. Silva. Using Data Mining to Predict Secondary School Student Performance. In A. Brito and J. Teixeira Eds., Proceedings of 5th FUture BUsiness TEChnology Conference (FUBUTEC 2008) pp. 5-12, Porto, Portugal, April, 2008, EUROSIS, ISBN 978-9077381-39-7.
+Available at: [Web Link](http://www3.dsi.uminho.pt/pcortez/student.pdf)
+
+
+El joc de dades té dos arxius un pels alumnes de matemàtiques i un altre pels alumnes de portugués. Carreguem els dos.
+
+
+```{r}
+student_mat=read.table("data/student-mat.csv",sep=";",header=TRUE, stringsAsFactors = TRUE)
+student_por=read.table("data/student-por.csv",sep=";",header=TRUE, stringsAsFactors = TRUE)
+```
+
+
+
+## Descripció de les dades
+
+Com a la primera part de la pràctica ja es va fer la descripció del joc de dades, passem directament a la preparació de les mateixes
+
+
+## DADES ABSENTS
+
+En principi no hi ha dades absents, però ho comprovem.
+
+```{r echo=TRUE, message=FALSE, warning=FALSE}
+colSums(is.na(student_por))
+colSums(student_por == "")
+```
+
+```{r}
+colSums(is.na(student_mat))
+colSums(student_mat == "")
+```
+
+# Modificacions de les dades
+
+## Qualificacions
+
+Les dades G1, G2, G3 són les qualificacions dels alumnes al que serien la 1a avaluació (G1), la 2a (G2) i la 3a i final (G3), i es veu que en el sistema portugués (o al menys en aquestes dades) van d'1 a 20.
+Com es possible que necessitem les dades discretitzades, procedirem a desicretitzar-les segons dos criteris:
+
+1. Suspès - Aprovat, amb el 10 com a qualificació de tall.
+2. Qualificacions (supes - aprovat - notable_excelent, amb el 10 i el 15 com a notes de tall.
+
+
+
+```{r}
+
+## DADES DE PORTUGUES
+
+for(qualificacio in c("G1", "G2", "G3")){
+  column1 <- paste0("aprovat_", qualificacio)
+  column2 <- paste0("nota_", qualificacio)
+student_por[, column1] <- arules::discretize(student_por[, qualificacio], method = "fixed",
+                                          breaks = c(0,10,20),
+                                          labels = c("suspes", "aprovat"))
+
+student_por[,column2] <- arules::discretize(student_por[,qualificacio], method = "fixed",
+                                          breaks = c(0,10,15,20),
+                                        labels = c("suspes", "aprovat","notable_excelent"))
+
+##DADES DE MATEMÀTIQUES
+
+student_mat[, column1] <- arules::discretize(student_mat[, qualificacio], method = "fixed",
+                                          breaks = c(0,10,20),
+                                          labels = c("suspes", "aprovat"))
+
+student_mat[,column2] <- arules::discretize(student_mat[,qualificacio], method = "fixed",
+                                          breaks = c(0,10,15,20),
+                                        labels = c("suspes", "aprovat","notable_excelent"))
+
+}
+```
+
+Si ens fixem els alumnes que tenen un 0 a la tercera sembla que són alumnes que van abandonar, haur
+
+
+# NOVES VARIABLES
+
+Creem una columna nova que sigui la màxima educació familiar, es a dir, que d'entre pare i mare triï es selecciona el màxim nivell d'estudis.
+
+```{r}
+
+student_por$MaxEdu <- pmax(student_por$Fedu, student_por$Medu)
+student_mat$MaxEdu <- pmax(student_mat$Fedu, student_mat$Medu)
+
+```
+
+
+
+# RECODIFICACIÓ
+
+La major part de variables són categòriques però algunes tenen codificació numèrica. De cara a la visualització serà millor recodificar-les amb els noms concrets.
+
+(Abans hem comprovat que totes les categories estan presents)
+
+
+```{r}
+#Recodifiquem per portugues
+
+student_por$Medu <- cut(student_por$Medu, 5, labels = c("Cap", "Primaria", "Secundaria", "Batxiller",
+                                                        "Superior"))
+student_por$Fedu <- cut(student_por$Fedu, 5, labels = c("Cap", "Primaria", "Secundaria", "Batxiller",
+                                                        "Superior"))
+student_por$MaxEdu <- cut(student_por$MaxEdu, 4, labels = c("Primaria", "Secundaria", "Batxiller", "Superior"))
+
+student_por$traveltime <- cut(student_por$traveltime, 4, labels = c("<15min", "<30min", "<1hora", ">1hora"))
+student_por$studytime <- cut(student_por$studytime, 4, labels = c("<2hores", "<5hores", "<10hores", ">10hores"))
+
+etiquetes1 = c("Molt Dolenta", "Dolenta", "Normal", "Bona", "Molt bona")
+etiquetes2 = c("Molt Poc", "Poc", "Normal", "Bastant", "Molt")
+nfactors = 5
+
+student_por$famrel <- cut(student_por$famrel, nfactors, labels = etiquetes1)
+student_por$freetime <- cut(student_por$freetime, nfactors, labels = etiquetes2)
+student_por$goout <- cut(student_por$goout, nfactors, labels = etiquetes2)
+student_por$Dalc <- cut(student_por$Dalc, nfactors, labels =etiquetes2)
+student_por$Walc <- cut(student_por$Walc, nfactors, labels = etiquetes2)
+student_por$health <- cut(student_por$health, nfactors, labels = etiquetes1)
+
+
+
+
+```
+
+
+
+```{r}
+
+#Recodifiquem per matemàtiques
+
+student_mat$Medu <- cut(student_mat$Medu, 5, labels = c("Cap", "Primaria", "Secundaria", "Batxiller",
+                                                        "Superior"))
+student_mat$Fedu <- cut(student_mat$Fedu, 5, labels = c("Cap", "Primaria", "Secundaria", "Batxiller",
+                                                        "Superior"))
+student_mat$MaxEdu <- cut(student_mat$MaxEdu, 4, labels = c("Primaria", "Secundaria", "Batxiller", "Superior"))
+
+student_mat$traveltime <- cut(student_mat$traveltime, 4, labels = c("<15min", "<30min", "<1hora", ">1hora"))
+student_mat$studytime <- cut(student_mat$studytime, 4, labels = c("<2hores", "<5hores", "<10hores", ">10hores"))
+
+etiquetes1 = c("Molt Dolenta", "Dolenta", "Normal", "Bona", "Molt bona")
+etiquetes2 = c("Molt Poc", "Poc", "Normal", "Bastant", "Molt")
+nfactors = 5
+
+student_mat$famrel <- cut(student_mat$famrel, nfactors, labels = etiquetes1)
+student_mat$freetime <- cut(student_mat$freetime, nfactors, labels = etiquetes2)
+student_mat$goout <- cut(student_mat$goout, nfactors, labels = etiquetes2)
+student_mat$Dalc <- cut(student_mat$Dalc, nfactors, labels =etiquetes2)
+student_mat$Walc <- cut(student_mat$Walc, nfactors, labels = etiquetes2)
+student_mat$health <- cut(student_mat$health, nfactors, labels = etiquetes1)
+
+```
+
+
+# Unió dels datasets
+
+Si suposem que certes combinacions de respostes, escola, sexe, edat,treball de la mare, del pare, mida de la familia... (fins a 24 variables) és impossible que siguin iguals per dos alumnes diferents podem combinar les respostes de portugués i de matemàtiques per tenir un sol joc de dades pels alumnes que estan als dos datasets
+
+
+
+```{r}
+student_global=merge(student_mat,student_por,by=c("school","sex","age","address","famsize","Pstatus","Medu","Fedu","Mjob","Fjob","reason","guardian", "traveltime", "nursery", "higher", "internet", "romantic","famrel","freetime","goout", "Dalc", "Walc", "health", "MaxEdu"), suffixes = c("_mat", "_por"))
+print(nrow(student_mat))
+print(nrow(student_por))
+print(nrow(student_global)) 
+
+```
+# Reanomenar factors
+
+```{r}
+student_global$Pstatus <- recode(student_global$Pstatus,
+                                 T = "Matrimoni",
+                                 A = "Separat/Divorciats")
+
+student_global$famsize <- recode(student_global$famsize,
+                                 GT3 = "Més d'un fill",
+                                 LE3 = "Fill únic")
+
+student_global$guardian <- recode(student_global$guardian,
+                                   father = "pare",
+                                   mother = "mare",
+                                   other = "altra persona")
+
+
+student_global$Fjob <- recode(student_global$Fjob,
+                              at_home = "A Casa",
+                              health = "Salut",
+                              other = "Altres",
+                              services = "Serveis",
+                              teacher = "Educació"
+                              )
+
+student_global$Mjob <- recode(student_global$Mjob,
+                              at_home = "A Casa",
+                              health = "Salut",
+                              other = "Altres",
+                              services = "Serveis",
+                              teacher = "Educació"
+                              )
+
+student_global$sex <- recode(student_global$sex,
+                             "F" = "Dona",
+                             "M" = "Home")
+
+```
+
+
+
+# Qualificació final de les dues materies
+
+```{r}
+
+student_global$Avg_Final <- (student_global$G3_mat + student_global$G3_por)/2
+student_global$Avg_1 <- (student_global$G1_mat + student_global$G1_por)/2
+student_global$Avg_2 <- (student_global$G2_mat + student_global$G2_por)/2
+
+for(qualificacio in c("Avg_Final", "Avg_1", "Avg_2")){
+  column1 <- paste0("aprovat_", qualificacio)
+  column2 <- paste0("nota_", qualificacio)
+student_global[, column1] <- arules::discretize(student_global[, qualificacio], method = "fixed",
+                                          breaks = c(0,10,20),
+                                          labels = c("suspes", "aprovat"))
+
+student_global[,column2] <- arules::discretize(student_global[,qualificacio], method = "fixed",
+                                          breaks = c(0,10,15,20),
+                                        labels = c("suspes", "aprovat","notable_excelent"))
+
+##DADES DE MATEMÀTIQUES
+
+student_global[, column1] <- arules::discretize(student_global[, qualificacio], method = "fixed",
+                                          breaks = c(0,10,20),
+                                          labels = c("suspes", "aprovat"))
+
+student_global[,column2] <- arules::discretize(student_global[,qualificacio], method = "fixed",
+                                          breaks = c(0,10,15,20),
+                                        labels = c("suspes", "aprovat","notable_excelent"))
+
+}
+
+```
+
+# Creem agrupacions per tal de poder fer histogrames
+
+```{r}
+
+student_global$Nota_bins <- arules::discretize(student_global$Avg_Final, method = "fixed",
+                                               breaks = c(0,2,4,6,8,10,12,14,16,18,20),
+                                               labels = c("(0-2]","(2-4]","(4-6]","(6-8]",
+                                                          "(8-10]","(10-12]","(12-14]","(14-16]",
+                                                          "(16-18]", "(18-20]"))
+
+
+```
+
+```{r}
+student_global$Avg_Final2 <- ceiling(student_global$Avg_Final)
+
+hist1 <- student_global %>%
+  group_by(sex, Avg_Final2) %>%
+  summarise(total = n()) %>%
+  ungroup()
+  
+
+hist2 <- student_global %>%
+  group_by(Avg_Final2) %>%
+  summarise(total = n()) %>%
+  ungroup() %>%
+  mutate(sex = "Total")
+
+col_order = c("sex", "Avg_Final2", "total")
+
+hist2 <- hist2[, col_order]
+
+hist1 <- rbind(hist2, hist1)
+
+```
+
+```{r}
+hist3 <- student_global %>%
+  group_by(sex, Avg_Final2) %>%
+  summarise(total = n()) %>%
+  ungroup() %>%
+  pivot_wider(names_from = sex , values_from = total) %>%
+  replace_na(list(F = 0))
+
+```
+
+```{r}
+valors_educatius1 <- student_global %>%
+  group_by(failures_mat) %>%
+  summarise(total = mean(G3_mat))
+
+
+valors_educatius2 <- student_global %>%
+  group_by(MaxEdu) %>%
+  summarise(total = mean(Avg_Final))
+
+
+valors_educatius3 <- student_global %>%
+  group_by(Fjob) %>%
+  summarise(total = mean(Avg_Final))
+
+valors_educatius4 <- student_global %>%
+  group_by(Mjob) %>%
+  summarise(total = mean(Avg_Final))
+
+
+valors_educatius5 <- student_global %>%
+  group_by(Dalc) %>%
+  summarise(total = mean(Avg_Final))
+
+valors_educatius6 <- student_global %>%
+  group_by(goout) %>%
+  summarise(total = mean(Avg_Final))
+
+valors_educatius7 <- student_global %>%
+  group_by(sex) %>%
+  summarise(total = mean(Avg_Final))
+
+```
+
+# Connectem tots per posar-los a la mateixa gràfica de flourish
+
+```{r}
+dfs <- list(valors_educatius1, valors_educatius2, valors_educatius3, valors_educatius4, valors_educatius5, valors_educatius6, valors_educatius7)
+
+
+noudf <- data.frame(total = double(),
+                      name = character(),
+                      value = character())
+
+for(df in dfs){
+  
+
+  x <- pivot_longer(df, cols = 1)
+
+  noudf <- rbind(noudf, x)
+
+  
+}
+
+# Reanomenem els valors
+
+noudf$name[noudf$name == "failures_mat"] <- "Num. suspeses previament"
+
+noudf$name[noudf$name == "MaxEdu"] <- "Màxim nivell educatiu pares"
+
+noudf$name[noudf$name == "Fjob"] <- "Treball Pare"
+
+
+noudf$name[noudf$name == "Mjob"] <- "Treball Mare"
+
+
+noudf$name[noudf$name == "Dalc"] <- "Consum diari alcohol"
+
+noudf$name[noudf$name == "goout"] <- "Surt molt?"
+
+noudf$name[noudf$name == "sex"] <- "Gènere"
+
+```
+
+
+
+# Desem les dades
+
+Gravem les dades a un full de càlcul per així tenir-les totes juntes, per també desem un CSV per cada joc de dades
+
+```{r}
+library(openxlsx)
+
+wb <- createWorkbook()
+
+addWorksheet(wb, "Portugues")
+writeData(wb, "Portugues", student_por)
+
+addWorksheet(wb, "Matematiques")
+writeData(wb, "Matematiques", student_mat)
+
+addWorksheet(wb, "Global")
+writeData(wb, "Global", student_global)
+
+addWorksheet(wb, "Hist_Genere")
+writeData(wb, "Hist_Genere", hist1)
+
+addWorksheet(wb, "Hist_Genere2")
+writeData(wb, "Hist_Genere2", hist3)
+
+addWorksheet(wb, "HistoriaEducativa")
+writeData(wb, "HistoriaEducativa", valors_educatius1)
+
+addWorksheet(wb, "Educacio_Pares")
+writeData(wb, "Educacio_Pares", valors_educatius2)
+
+addWorksheet(wb, "Treball_Pare")
+writeData(wb, "Treball_Pare", valors_educatius3)
+
+addWorksheet(wb, "Treball_Mare")
+writeData(wb, "Treball_Mare", valors_educatius4)
+
+addWorksheet(wb, "Consum_alcohol")
+writeData(wb, "Consum_alcohol", valors_educatius5)
+
+addWorksheet(wb, "Sortides")
+writeData(wb, "Sortides", valors_educatius6)
+
+addWorksheet(wb, "Genere")
+writeData(wb, "Genere", valors_educatius7)
+
+addWorksheet(wb, "Resultats_Exploracio")
+writeData(wb, "Resultats_Exploracio", noudf)
+
+arxiu <- "dadesNetes.xlsx"
+
+saveWorkbook(wb, file = arxiu, overwrite = TRUE)
+
+```
+
+```{r}
+write.csv(student_mat, "mates.csv", row.names = FALSE)
+write.csv(student_por, "port.csv", row.names = FALSE)
+write.csv(student_global, "global.csv", row.names = FALSE)
+
+```
+
+
+
