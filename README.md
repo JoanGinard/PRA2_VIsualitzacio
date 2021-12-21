@@ -23,6 +23,8 @@ Carpeta amb l'excel que genera l'arxiu de R.
 1. *dadesNetes.xlsx*
 
 S'ha triat l'excel com a format de sortida perquè a la visualització s'ha fet servir Flourish i les dades s'han de preparar diferent segons el tipus de gràfic i excel permetia fer-ho tot en un arxiu i no era necessari generar diferents CSVs
+
+
 <br/>
 ### **Arxiu de R**
 
