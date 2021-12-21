@@ -5,7 +5,7 @@ Segona part de la pràctica de Visualització de dades del Màster de ciència d
 ## Al branch trobareu:
 
 **Data**
-<br\>
+<br/>
 Carpeta amb les dades.
 
 Font de les dades:
