@@ -1,4 +1,4 @@
-# PRA2_Visualitzacio
+# 2ª Part Pràctica Visualització de dades
 
 Segona part de la pràctica de Visualització de dades del Màster de ciència de dades de la UOC
 
@@ -30,7 +30,7 @@ S'ha triat l'excel com a format de sortida perquè a la visualització s'ha fet 
 
 He triat el format *.Rmd* perquè trobo que els comentaris es visualitzen millor.
 
-L'arxiu:
+L'arxiu (no necessàriament en aquest ordre):
 1. Canvia els noms dels factors que a l'original venen en format numèric.
 2. "Tradueix" noms de l'anglès al català.
 3. Categoritza les notes, i.e: a partir de les notes numèriques crea una variable on es divideixen les notes en suspès-aprovat i una altra en suspès-aprovat-notable/excel·lent.
