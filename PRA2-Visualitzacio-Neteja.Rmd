@@ -72,7 +72,7 @@ Les dades G1, G2, G3 són les qualificacions dels alumnes al que serien la 1a av
 Com es possible que necessitem les dades discretitzades, procedirem a desicretitzar-les segons dos criteris:
 
 1. Suspès - Aprovat, amb el 10 com a qualificació de tall.
-2. Qualificacions (supes - aprovat - notable_excelent, amb el 10 i el 15 com a notes de tall.
+2. Qualificacions, supes - aprovat - notable_excelent, amb el 10 i el 15 com a notes de tall.
 
 
 
@@ -197,6 +197,7 @@ print(nrow(student_por))
 print(nrow(student_global)) 
 
 ```
+
 # Reanomenar factors
 
 ```{r}
@@ -271,51 +272,8 @@ student_global[,column2] <- arules::discretize(student_global[,qualificacio], me
 
 ```
 
-# Creem agrupacions per tal de poder fer histogrames
+# Preparem les dades per fer les representacions a certs gràfics del flourish
 
-```{r}
-
-student_global$Nota_bins <- arules::discretize(student_global$Avg_Final, method = "fixed",
-                                               breaks = c(0,2,4,6,8,10,12,14,16,18,20),
-                                               labels = c("(0-2]","(2-4]","(4-6]","(6-8]",
-                                                          "(8-10]","(10-12]","(12-14]","(14-16]",
-                                                          "(16-18]", "(18-20]"))
-
-
-```
-
-```{r}
-student_global$Avg_Final2 <- ceiling(student_global$Avg_Final)
-
-hist1 <- student_global %>%
-  group_by(sex, Avg_Final2) %>%
-  summarise(total = n()) %>%
-  ungroup()
-  
-
-hist2 <- student_global %>%
-  group_by(Avg_Final2) %>%
-  summarise(total = n()) %>%
-  ungroup() %>%
-  mutate(sex = "Total")
-
-col_order = c("sex", "Avg_Final2", "total")
-
-hist2 <- hist2[, col_order]
-
-hist1 <- rbind(hist2, hist1)
-
-```
-
-```{r}
-hist3 <- student_global %>%
-  group_by(sex, Avg_Final2) %>%
-  summarise(total = n()) %>%
-  ungroup() %>%
-  pivot_wider(names_from = sex , values_from = total) %>%
-  replace_na(list(F = 0))
-
-```
 
 ```{r}
 valors_educatius1 <- student_global %>%
@@ -351,7 +309,7 @@ valors_educatius7 <- student_global %>%
 
 ```
 
-# Connectem tots per posar-los a la mateixa gràfica de flourish
+## Connectem tots per posar-los a la mateixa gràfica de flourish
 
 ```{r}
 dfs <- list(valors_educatius1, valors_educatius2, valors_educatius3, valors_educatius4, valors_educatius5, valors_educatius6, valors_educatius7)
@@ -411,11 +369,6 @@ writeData(wb, "Matematiques", student_mat)
 addWorksheet(wb, "Global")
 writeData(wb, "Global", student_global)
 
-addWorksheet(wb, "Hist_Genere")
-writeData(wb, "Hist_Genere", hist1)
-
-addWorksheet(wb, "Hist_Genere2")
-writeData(wb, "Hist_Genere2", hist3)
 
 addWorksheet(wb, "HistoriaEducativa")
 writeData(wb, "HistoriaEducativa", valors_educatius1)
@@ -423,36 +376,17 @@ writeData(wb, "HistoriaEducativa", valors_educatius1)
 addWorksheet(wb, "Educacio_Pares")
 writeData(wb, "Educacio_Pares", valors_educatius2)
 
-addWorksheet(wb, "Treball_Pare")
-writeData(wb, "Treball_Pare", valors_educatius3)
-
-addWorksheet(wb, "Treball_Mare")
-writeData(wb, "Treball_Mare", valors_educatius4)
-
-addWorksheet(wb, "Consum_alcohol")
-writeData(wb, "Consum_alcohol", valors_educatius5)
-
-addWorksheet(wb, "Sortides")
-writeData(wb, "Sortides", valors_educatius6)
-
-addWorksheet(wb, "Genere")
-writeData(wb, "Genere", valors_educatius7)
 
 addWorksheet(wb, "Resultats_Exploracio")
 writeData(wb, "Resultats_Exploracio", noudf)
 
-arxiu <- "dadesNetes.xlsx"
+arxiu <- "Sortida/dadesNetes.xlsx"
 
 saveWorkbook(wb, file = arxiu, overwrite = TRUE)
 
 ```
 
-```{r}
-write.csv(student_mat, "mates.csv", row.names = FALSE)
-write.csv(student_por, "port.csv", row.names = FALSE)
-write.csv(student_global, "global.csv", row.names = FALSE)
 
-```
 
 
 
