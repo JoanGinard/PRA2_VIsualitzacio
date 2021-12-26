@@ -2,7 +2,15 @@
 
 Segona part de la pràctica de Visualització de dades del Màster de ciència de dades de la UOC
 
-## Descripció del repositori:
+## Visualització
+
+La visualització s'ha realitzat amb l'eina gratuïta [Flourish](https://flourish.studio/). Es tobra penjada al següent link:
+
+https://public.flourish.studio/story/1071816/
+
+<br/>
+
+## Descripció del repositori
 
 ### **Data**
 
@@ -24,8 +32,8 @@ Carpeta amb l'excel que genera l'arxiu de R.
 
 S'ha triat l'excel com a format de sortida perquè a la visualització s'ha fet servir Flourish i les dades s'han de preparar diferent segons el tipus de gràfic i excel permetia fer-ho tot en un arxiu i no era necessari generar diferents CSVs
 
-
 <br/>
+
 ### **Arxiu de R**
 
 *PRA2-Visualitzacio-Neteja.Rmd*
@@ -40,7 +48,6 @@ L'arxiu (no necessàriament en aquest ordre):
 5. Calcula la nota mitjana de les dues matèries i creem les variables del punt 3 per la nota mitjana.
 6. Prepara les diferents taules de dades per flourish.
 7. Grava l'arxiu .xlsx
-
 
 
 
